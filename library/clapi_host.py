@@ -1,37 +1,41 @@
 #!/usr/bin/python
 
 from ansible.module_utils.basic import *
-import subprocess
-import sys
+import shlex, subprocess, sys
 
 def host_present(data):
     #Building command base
-    cmd = "centreon -u "+data['username']+" -p "+data['password']+" -o HOST -a add"
+    basecmd = "centreon -u "+data['username']+" -p "+data['password']
+    operation = " -o HOST -a add"
 
     #Building -v argument
     varg = ' -v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
     if data['groupname']:
-        varg += data['groupname']+';"'
-    #Building final command
-    cmd += varg+'"'
+        varg += data['groupname']+';'
+    varg += '"'
 
-    try:
-        subprocess.check_output(cmd)                       
-    except subprocess.CalledProcessError as clapi_error:
-        if clapi_error.output.contains("Object already exists"):
-                has_changed = False
-                meta = {"present": api_error.output}
-                return (has_changed, meta)
+    #Building final command
+    fullcmd = basecmd+operation+varg
+
+    args = shlex.split(fullcmd)
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    if out == '':
+        has_changed = True
+        meta = {"present": "successfully added"}
+        return (has_changed, meta)
+    else:
+        if out.find("Object already exists") == 0:
+            has_changed = False
+            meta = {"present": out}
+            return (has_changed, meta)
         else:
-                has_changed = False
-                print json.dumps({
-                    "failed" : True,
-                    "msg"    : "centreon command failed with error: "+clapi_error.output
-                })
-                sys.exit(1)
-    has_changed = True
-    meta = {"present": out}
-    return (has_changed, meta)
+            print json.dumps({
+                "failed" : True,
+                "msg"    : "centreon command failed with error: "+out
+            })
+            sys.exit(1)
 
 def main():
 
