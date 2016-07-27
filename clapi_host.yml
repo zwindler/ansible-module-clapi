@@ -1,0 +1,13 @@
+- hosts: localhost
+  tasks:
+    - name: test clapi module
+      clapi_host: 
+        username: clapi
+        password: clapi
+        hostname: newserver
+        ipaddress: 192.168.132.100
+        groupname: Ping_LAN
+      register: result
+      delegate_to: ces
+
+    - debug: var=result    
