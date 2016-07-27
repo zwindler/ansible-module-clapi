@@ -3,37 +3,62 @@
 from ansible.module_utils.basic import *
 import shlex, subprocess, sys
 
-def host_present(data):
-    #Building command base
-    basecmd = "centreon -u "+data['username']+" -p "+data['password']
-    operation = " -o HOST -a add"
+def base_command(username, password):
+    #TODO find centreon path
+    return "centreon -u "+username+" -p "+password+" -o HOST "
 
-    #Building -v argument
-    varg = ' -v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
-    if data['groupname']:
-        varg += data['groupname']+';'
-    varg += '"'
+def run_command(fullcmd):
+    proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
+    return proc.communicate()[0],proc.returncode
 
-    #Building final command
-    fullcmd = basecmd+operation+varg
+def host_absent(data):
+    #building command
+    basecmd = base_command(data['username'], data['password'])
+    operation = "-a del "
+    varg = '-v "'+data['hostname']+'"'
+    #running full command
+    (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    args = shlex.split(fullcmd)
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
-    (out, err) = proc.communicate()
-
-    if out == '':
+    if rc == 0:
         has_changed = True
-        meta = {"present": "successfully added"}
+        meta = {"present": "successfully removed"}
         return (has_changed, meta)
     else:
-        if out.find("Object already exists") == 0:
+        if cmdout.find("Object not found") == 0:
             has_changed = False
-            meta = {"present": out}
+            meta = {"present": cmdout}
             return (has_changed, meta)
         else:
             print json.dumps({
                 "failed" : True,
-                "msg"    : "centreon command failed with error: "+out
+                "msg"    : "centreon command failed with error: "+cmdout
+            })
+            sys.exit(1)
+
+def host_present(data):
+    #building command
+    basecmd = base_command(data['username'], data['password'])
+    operation = "-a add "
+    varg = '-v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
+    if data['groupname']:
+        varg += data['groupname']+';'
+    varg += '"'
+    #running full command
+    (cmdout, rc) = run_command(basecmd+operation+varg)
+
+    if rc == 0:
+        has_changed = True
+        meta = {"present": "successfully added"}
+        return (has_changed, meta)
+    else:
+        if cmdout.find("Object already exists") == 0:
+            has_changed = False
+            meta = {"present": cmdout}
+            return (has_changed, meta)
+        else:
+            print json.dumps({
+                "failed" : True,
+                "msg"    : "centreon command failed with error: "+cmdout
             })
             sys.exit(1)
 
@@ -46,13 +71,21 @@ def main():
         "ipaddress": {"required": True, "type": "str"},
         "hosttemplate": {"default": "generic-host", "type": "str"},
         "pollername": {"default": "Central", "type": "str"},
-        "groupname": {"type": "str"}
+        "groupname": {"type": "str"},
+        "state": {
+            "default": "present", 
+            "choices": ['present', 'absent'],  
+            "type": 'str' 
+        },
+    }
+    choice_map = {
+      "present": host_present,
+      "absent": host_absent, 
     }
 
     module = AnsibleModule(argument_spec=fields)
-    has_changed, result = host_present(module.params)
+    has_changed, result = choice_map.get(module.params['state'])(module.params)
     module.exit_json(changed=has_changed, meta=result)
-
 
 if __name__ == '__main__':  
     main()
