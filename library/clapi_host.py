@@ -1,6 +1,20 @@
 #!/usr/bin/python
 
 from ansible.module_utils.basic import *
+import subprocess
+
+def host_present(data):
+    if data['groupname']:
+        varg = '"'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'+data['groupname']+';"'
+    else:
+        varg = '"'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';"'
+    
+    proc = subprocess.Popen(["centreon", "-u", data['username'], "-p", data['password'], "-o", "HOST", "-a", "add", "-v", varg], stdout=subprocess.PIPE)
+    (out, err) = proc.communicate()
+
+    has_changed = True
+    meta = {"present": out}
+    return (has_changed, meta)
 
 def main():
 
@@ -15,7 +29,8 @@ def main():
     }
 
     module = AnsibleModule(argument_spec=fields)
-    module.exit_json(changed=False, meta=module.params)
+    has_changed, result = host_present(module.params)
+    module.exit_json(changed=has_changed, meta=result)
 
 
 if __name__ == '__main__':  
