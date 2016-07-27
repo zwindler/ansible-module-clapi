@@ -2,16 +2,33 @@
 
 from ansible.module_utils.basic import *
 import subprocess
+import sys
 
 def host_present(data):
-    if data['groupname']:
-        varg = '"'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'+data['groupname']+';"'
-    else:
-        varg = '"'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';"'
-    
-    proc = subprocess.Popen(["centreon", "-u", data['username'], "-p", data['password'], "-o", "HOST", "-a", "add", "-v", varg], stdout=subprocess.PIPE)
-    (out, err) = proc.communicate()
+    #Building command base
+    cmd = "centreon -u "+data['username']+" -p "+data['password']+" -o HOST -a add"
 
+    #Building -v argument
+    varg = ' -v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
+    if data['groupname']:
+        varg += data['groupname']+';"'
+    #Building final command
+    cmd += varg+'"'
+
+    try:
+        subprocess.check_output(cmd)                       
+    except subprocess.CalledProcessError as clapi_error:
+        if clapi_error.output.contains("Object already exists"):
+                has_changed = False
+                meta = {"present": api_error.output}
+                return (has_changed, meta)
+        else:
+                has_changed = False
+                print json.dumps({
+                    "failed" : True,
+                    "msg"    : "centreon command failed with error: "+clapi_error.output
+                })
+                sys.exit(1)
     has_changed = True
     meta = {"present": out}
     return (has_changed, meta)
