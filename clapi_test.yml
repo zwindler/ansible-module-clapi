@@ -1,0 +1,51 @@
+- hosts: localhost
+  tasks:
+    - name: add an already existing host w/ clapi_host
+      clapi_host: 
+        username: clapi
+        password: clapi
+        hostname: newserver
+        ipaddress: 192.168.132.100
+        groupname: Ping_LAN
+        state: present
+      delegate_to: ces
+      notify: "notify poller after modification"
+
+    - name: remove host w/ clapi_host
+      clapi_host:
+        username: clapi
+        password: clapi
+        hostname: newserver
+        ipaddress: 192.168.132.100
+        state: absent
+      delegate_to: ces
+      notify: "notify poller after modification"
+
+    - name: remove another time host w/ clapi_host
+      clapi_host:
+        username: clapi
+        password: clapi
+        hostname: newserver
+        ipaddress: 192.168.132.100
+        state: absent
+      delegate_to: ces
+      notify: "notify poller after modification"
+
+    - name: add another time host w/ clapi_host
+      clapi_host:
+        username: clapi
+        password: clapi
+        hostname: newserver
+        ipaddress: 192.168.132.100
+        groupname: Ping_LAN
+        state: present
+      delegate_to: ces
+      notify: "notify poller after modification"
+
+  handlers:
+    - name: notify poller after modification
+      clapi_poller:
+        username: clapi
+        password: clapi
+        pollername: Central
+      delegate_to: ces
