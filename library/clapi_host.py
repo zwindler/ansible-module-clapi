@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-from ansible.module_utils.basic import *
-import shlex, subprocess, sys
-
 def base_command(username, password):
     #TODO find centreon path
     return "centreon -u "+username+" -p "+password+" -o HOST "
@@ -86,6 +83,9 @@ def main():
     module = AnsibleModule(argument_spec=fields)
     has_changed, result = choice_map.get(module.params['state'])(module.params)
     module.exit_json(changed=has_changed, meta=result)
+
+from ansible.module_utils.basic import *
+import shlex, subprocess, sys
 
 if __name__ == '__main__':  
     main()
