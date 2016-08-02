@@ -3,11 +3,11 @@
 DOCUMENTATION = '''
 ---
 module: clapi_poller
-short_description: Centreon CLAPI host creates/updates/deletes
+short_description: Centreon CLAPI poller config generation and restart
 description:
-   - This module allows you to create, modify and delete Centreon host entries 
-   - and associated group and template data. More informations on CLAPI can be 
-   - found on https://documentation.centreon.com/docs/centreon-clapi/en/latest/
+   - This module allows you to generate config and restart Centreon pollers 
+   - More informations on CLAPI can be found on 
+   - https://documentation.centreon.com/docs/centreon-clapi/en/latest/
 version_added: "0.1"
 author:
     - "Denis GERMAIN (@zwindler)"
