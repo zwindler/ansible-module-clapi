@@ -108,6 +108,20 @@ EXAMPLES = '''
     password: clapi
     hostname: newserver
     state: absent
+    
+#for better automation, consider using roles, facts and variables
+#notification to clapi_poller module for restart
+- name: add host w/ clapi_host
+  clapi_host:
+    username: clapi
+    password: clapi
+    hostname: '{{ inventory_hostname }}'
+    ipaddress: '{{ ansible_default_ipv4.address }}'
+    groupname: Ping_LAN
+    pollername: '{{ centreon_pollername }}'
+    state: present
+  delegate_to: '{{ centreon_poller }}'
+  notify: "notify poller after modification"
 '''
 
 def base_command(username, password):
