@@ -58,7 +58,7 @@ options:
 	ipaddress:
 		description:
 			- ip address of the hostname to remove/add to centreon configuration
-			- not usefull when using absent state (remove host) so 127.0.0.1 by default
+			- not useful when using absent state (remove host) so 127.0.0.1 by default
         required: true
 		default: "127.0.0.1"
 	hosttemplate:
