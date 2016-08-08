@@ -73,6 +73,14 @@ handlers:
       password: clapi
       pollername: somesite
       action : POLLERGENERATE
+     
+#Use roles, groups and vars for better automation
+- name: notify poller after modification
+  clapi_poller:
+    username: clapi
+    password: clapi
+    pollername: '{{ centreon_pollername }}'
+  delegate_to: '{{ centreon_poller }}'
 '''
 
 def base_command(username, password):
