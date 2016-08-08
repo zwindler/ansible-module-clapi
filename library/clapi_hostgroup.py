@@ -34,11 +34,12 @@ options:
     "password": {"required": True, "type": "str"},
     "hostgroupname": {"required": True, "type": "str"},
     "hostgroupalias": {"required": False, "type": "str"},
-    "state": {
-        "default": "present", 
-            "choices": ['present', 'absent'],  
-            "type": 'str' 
-        },
+    "members": {"required": False, "type": "str"}
+    "action": {
+        "default": "add", 
+        "choices": ['add', 'delete', 'addmembers', 'removemembers'],  
+        "type": 'str' 
+    },
 
     username:
         description:
@@ -52,25 +53,31 @@ options:
         description:
             - hostgroupname to remove/add to centreon configuration
         required: true
-    pollername:
+    hostgroupalias:
         description:
-            - Select which Centreon host (poller) is targeted. By design, first 
-            - Centreon poller is called Central
+            - hostgroupalias when you add a new hostgroup
         required: false
-        default: "Central"
-    state:
+    members:
         description:
-            - Choose whether the hostgroup must be present or absent from Centreon
-            - poller configuration file
-            - C(absent) removes hostgroup from configuration if needed
-            - C(present) adds host from configuration if needed
+            - comma separated hostnames to add to/remove from hostgroup
+            - Members MUST exist
+        required: false
+    action:
+        description:
+            - Choose whether the hostgroup must be present or absent or modified
+            - from Centreon configuration files
+            - C(add) adds hostgroup from configuration if needed
+            - C(addmembers) adds hosts to hostgroups if needed
+            - C(delete) removes hostgroup from configuration if needed
+            - C(removemembers) removes hosts from hostgroups 
+            - if needed
         required: true
-        choices: ['absent', 'present']
-        default: "present"
+        choices: ['add', 'addmembers', 'delete', 'removemembers']
+        default: "add"
 '''
 
 EXAMPLES = '''
-#Add a test hostgroup, delegated to centreon poller
+#Adds a test hostgroup, delegated to centreon poller "ces"
 - hosts: localhost
   tasks:
     - name: add test hostgroup
@@ -78,8 +85,41 @@ EXAMPLES = '''
         username: clapi
         password: clapi
         hostgroupname: testgroup
-        state: present
+        hostgroupalias: "my test group"
+        state: add
       delegate_to: ces
+      
+#Deletes a test hostgroup
+- hosts: localhost
+  tasks:
+    - name: add test hostgroup
+      clapi_hostgroup:
+        username: clapi
+        password: clapi
+        hostgroupname: testgroup
+        state: delete
+        
+#Adds, if needed, the following comma separated hosts to hostgroup testgroup
+- hosts: localhost
+  tasks:
+    - name: add hosts to test hostgroup
+      clapi_hostgroup:
+        username: clapi
+        password: clapi
+        hostgroupname: testgroup
+        members: server1,server2,server3
+        state: addmembers
+        
+#Removes, if needed, server3 from hostgroup testgroup
+- hosts: localhost
+  tasks:
+    - name: remove hosts from test hostgroup
+      clapi_hostgroup:
+        username: clapi
+        password: clapi
+        hostgroupname: testgroup
+        members: server3
+        state: removemembers
 '''
 
 def base_command(username, password):
@@ -90,31 +130,7 @@ def run_command(fullcmd):
     proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
     return proc.communicate()[0],proc.returncode
 
-def hostgroup_absent(data):
-    #building command
-    basecmd = base_command(data['username'], data['password'])
-    operation = "-a del "
-    varg = '-v "'+data['hostgroupname']+'"'
-    #running full command
-    (cmdout, rc) = run_command(basecmd+operation+varg)
-
-    if rc == 0:
-        has_changed = True
-        meta = {"absent": "successfully removed"}
-        return (has_changed, meta)
-    else:
-        if cmdout.find("Object not found") == 0:
-            has_changed = False
-            meta = {"absent": cmdout}
-            return (has_changed, meta)
-        else:
-            print json.dumps({
-                "failed" : True,
-                "msg"    : "centreon command failed with error: "+cmdout
-            })
-            sys.exit(1)
-
-def hostgroup_present(data):
+def hostgroup_add(data):
     #building command
     basecmd = base_command(data['username'], data['password'])
     operation = "-a add "
@@ -142,6 +158,44 @@ def hostgroup_present(data):
             })
             sys.exit(1)
 
+def hostgroup_addmembers(data):
+    print json.dumps({
+        "failed" : True,
+        "msg"    : "Not yet implemented"
+    })
+    sys.exit(1)
+
+def hostgroup_delete(data):
+    #building command
+    basecmd = base_command(data['username'], data['password'])
+    operation = "-a del "
+    varg = '-v "'+data['hostgroupname']+'"'
+    #running full command
+    (cmdout, rc) = run_command(basecmd+operation+varg)
+
+    if rc == 0:
+        has_changed = True
+        meta = {"absent": "successfully removed"}
+        return (has_changed, meta)
+    else:
+        if cmdout.find("Object not found") == 0:
+            has_changed = False
+            meta = {"absent": cmdout}
+            return (has_changed, meta)
+        else:
+            print json.dumps({
+                "failed" : True,
+                "msg"    : "centreon command failed with error: "+cmdout
+            })
+            sys.exit(1)
+
+def hostgroup_removemembers(data):
+    print json.dumps({
+        "failed" : True,
+        "msg"    : "Not yet implemented"
+    })
+    sys.exit(1)
+
 def main():
 
     fields = {
@@ -149,19 +203,22 @@ def main():
         "password": {"required": True, "type": "str"},
         "hostgroupname": {"required": True, "type": "str"},
         "hostgroupalias": {"required": False, "type": "str"},
-        "state": {
-            "default": "present", 
-            "choices": ['present', 'absent'],  
+        "members": {"required": False, "type": "str"}
+        "action": {
+            "default": "add", 
+            "choices": ['add', 'addmembers', 'delete', 'removemembers'],  
             "type": 'str' 
         },
     }
     choice_map = {
-      "present": hostgroup_present,
-      "absent": hostgroup_absent, 
+      "add": hostgroup_add,
+      "addmember": hostgroup_addmembers,
+      "delete": hostgroup_delete,
+      "removemembers": hostgroup_removemembers,
     }
 
     module = AnsibleModule(argument_spec=fields)
-    has_changed, result = choice_map.get(module.params['state'])(module.params)
+    has_changed, result = choice_map.get(module.params['action'])(module.params)
     module.exit_json(changed=has_changed, meta=result)
 
 from ansible.module_utils.basic import *
