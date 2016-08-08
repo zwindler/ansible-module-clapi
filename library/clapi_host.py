@@ -137,18 +137,15 @@ def host_absent(data):
     basecmd = base_command(data['username'], data['password'])
     operation = "-a del "
     varg = '-v "'+data['hostname']+'"'
+
     #running full command
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        has_changed = True
-        meta = {"absent": "successfully removed"}
-        return (has_changed, meta)
+        return (True, {"absent": "successfully removed"})
     else:
         if cmdout.find("Object not found") == 0:
-            has_changed = False
-            meta = {"absent": cmdout}
-            return (has_changed, meta)
+            return (False, {"absent": cmdout})
         else:
             print json.dumps({
                 "failed" : True,
@@ -161,21 +158,17 @@ def host_present(data):
     basecmd = base_command(data['username'], data['password'])
     operation = "-a add "
     varg = '-v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
-    if data['groupname']:
-        varg += data['groupname']+';'
+    if data['groupname']: varg += data['groupname']+';'
     varg += '"'
+
     #running full command
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        has_changed = True
-        meta = {"present": "successfully added"}
-        return (has_changed, meta)
+        return (True, {"present": "successfully added"})
     else:
         if cmdout.find("Object already exists") == 0:
-            has_changed = False
-            meta = {"present": cmdout}
-            return (has_changed, meta)
+            return (False, {"present": cmdout})
         else:
             print json.dumps({
                 "failed" : True,
