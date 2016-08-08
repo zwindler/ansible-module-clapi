@@ -100,9 +100,7 @@ def poller_action(data):
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        has_changed = True
-        meta = {"success": "action "+data['action']+" completed successfully. "+cmdout}
-        return (has_changed, meta)
+        return (True, {"success": "action "+data['action']+" completed successfully. "+cmdout})
     else:
         err = next((s for s in cmdout.split("\n") if 'Error' in s ), "Error not found, check logs")
         print json.dumps({
