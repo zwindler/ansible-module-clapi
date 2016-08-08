@@ -142,12 +142,12 @@ def host_absent(data):
 
     if rc == 0:
         has_changed = True
-        meta = {"present": "successfully removed"}
+        meta = {"absent": "successfully removed"}
         return (has_changed, meta)
     else:
         if cmdout.find("Object not found") == 0:
             has_changed = False
-            meta = {"present": cmdout}
+            meta = {"absent": cmdout}
             return (has_changed, meta)
         else:
             print json.dumps({
