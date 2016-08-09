@@ -34,7 +34,7 @@ options:
     "password": {"required": True, "type": "str"},
     "hostgroupname": {"required": True, "type": "str"},
     "hostgroupalias": {"required": False, "type": "str"},
-    "members": {"required": False, "type": "str"}
+    "members": {"required": False, "type": "str"},
     "action": {
         "default": "add", 
         "choices": ['add', 'delete', 'addmembers', 'removemembers'],  
@@ -86,7 +86,7 @@ EXAMPLES = '''
         password: clapi
         hostgroupname: testgroup
         hostgroupalias: "my test group"
-        state: add
+        action: add
       delegate_to: ces
       
 #Deletes a test hostgroup
@@ -97,7 +97,7 @@ EXAMPLES = '''
         username: clapi
         password: clapi
         hostgroupname: testgroup
-        state: delete
+        action: delete
         
 #Adds, if needed, the following comma separated hosts to hostgroup testgroup
 - hosts: localhost
@@ -108,7 +108,7 @@ EXAMPLES = '''
         password: clapi
         hostgroupname: testgroup
         members: server1,server2,server3
-        state: addmembers
+        action: addmembers
         
 #Removes, if needed, server3 from hostgroup testgroup
 - hosts: localhost
@@ -143,14 +143,10 @@ def hostgroup_add(data):
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        has_changed = True
-        meta = {"present": "successfully added"}
-        return (has_changed, meta)
+        return (True, {"present": "successfully added"})
     else:
         if cmdout.find("Object already exists") == 0:
-            has_changed = False
-            meta = {"present": cmdout}
-            return (has_changed, meta)
+            return (False, {"present": cmdout})
         else:
             print json.dumps({
                 "failed" : True,
@@ -166,22 +162,16 @@ def hostgroup_addmembers(data):
     sys.exit(1)
 
 def hostgroup_delete(data):
-    #building command
     basecmd = base_command(data['username'], data['password'])
     operation = "-a del "
     varg = '-v "'+data['hostgroupname']+'"'
-    #running full command
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        has_changed = True
-        meta = {"absent": "successfully removed"}
-        return (has_changed, meta)
+        return (True, {"absent": "successfully removed"})
     else:
         if cmdout.find("Object not found") == 0:
-            has_changed = False
-            meta = {"absent": cmdout}
-            return (has_changed, meta)
+            return (False, {"absent": cmdout})
         else:
             print json.dumps({
                 "failed" : True,
@@ -203,7 +193,7 @@ def main():
         "password": {"required": True, "type": "str"},
         "hostgroupname": {"required": True, "type": "str"},
         "hostgroupalias": {"required": False, "type": "str"},
-        "members": {"required": False, "type": "str"}
+        "members": {"required": False, "type": "str"},
         "action": {
             "default": "add", 
             "choices": ['add', 'addmembers', 'delete', 'removemembers'],  
