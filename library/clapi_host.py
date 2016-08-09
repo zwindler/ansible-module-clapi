@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
 #This file is part of ansible_module_clapi
 #Copyright (C) 2016  Denis GERMAIN
 #
