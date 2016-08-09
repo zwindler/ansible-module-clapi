@@ -124,7 +124,7 @@ EXAMPLES = '''
 
 def base_command(username, password):
     #TODO find centreon path
-    return "centreon -u "+username+" -p "+password+" -o HG "
+    return "centreon -u "+username+" -p "+password
 
 def run_command(fullcmd):
     proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
@@ -133,8 +133,8 @@ def run_command(fullcmd):
 def hostgroup_add(data):
     #building command
     basecmd = base_command(data['username'], data['password'])
-    operation = "-a add "
-    varg = '-v "'+data['hostgroupname']+';'
+    operation = " -o HG -a add"
+    varg = ' -v "'+data['hostgroupname']+';'
     if data['hostgroupalias']:
         varg += data['hostgroupalias']+';"'
     else:
@@ -163,8 +163,8 @@ def hostgroup_addmembers(data):
 
 def hostgroup_delete(data):
     basecmd = base_command(data['username'], data['password'])
-    operation = "-a del "
-    varg = '-v "'+data['hostgroupname']+'"'
+    operation = " -o HG -a del"
+    varg = ' -v "'+data['hostgroupname']+'"'
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:

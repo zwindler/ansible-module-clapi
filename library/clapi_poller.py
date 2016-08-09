@@ -85,7 +85,7 @@ handlers:
 
 def base_command(username, password):
     #TODO find centreon path
-    return "centreon -u "+username+" -p "+password+" "
+    return "centreon -u "+username+" -p "+password
 
 def run_command(fullcmd):
     proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
@@ -94,8 +94,8 @@ def run_command(fullcmd):
 def poller_action(data):
     #building command
     basecmd = base_command(data['username'], data['password'])
-    operation = "-a "+data['action']+" "
-    varg = '-v "'+data['pollername']+'"'
+    operation = " -a "+data['action']
+    varg = ' -v "'+data['pollername']+'"'
     #running full command
     (cmdout, rc) = run_command(basecmd+operation+varg)
 

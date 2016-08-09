@@ -126,7 +126,7 @@ EXAMPLES = '''
 
 def base_command(username, password):
     #TODO find centreon path
-    return "centreon -u "+username+" -p "+password+" -o HOST "
+    return "centreon -u "+username+" -p "+password
 
 def run_command(fullcmd):
     proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
@@ -135,8 +135,8 @@ def run_command(fullcmd):
 def host_absent(data):
     #building command
     basecmd = base_command(data['username'], data['password'])
-    operation = "-a del "
-    varg = '-v "'+data['hostname']+'"'
+    operation = " -o HOST -a del"
+    varg = ' -v "'+data['hostname']+'"'
 
     #running full command
     (cmdout, rc) = run_command(basecmd+operation+varg)
@@ -156,7 +156,7 @@ def host_absent(data):
 def host_present(data):
     #building command
     basecmd = base_command(data['username'], data['password'])
-    operation = "-a add "
+    operation = +" -o HOST -a add "
     varg = '-v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
     if data['groupname']: varg += data['groupname']+';'
     varg += '"'
