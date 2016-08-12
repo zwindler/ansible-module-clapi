@@ -158,7 +158,7 @@ def host_absent(data):
 def host_present(data):
     #building command
     basecmd = base_command(data['username'], data['password'])
-    operation = +" -o HOST -a add "
+    operation = " -o HOST -a add "
     varg = '-v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
     if data['groupname']: varg += data['groupname']+';'
     varg += '"'
