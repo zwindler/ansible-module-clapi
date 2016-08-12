@@ -39,7 +39,7 @@ options:
     "members": {"required": False, "type": "str"},
     "action": {
         "default": "add", 
-        "choices": ['add', 'delete', 'addmembers', 'removemembers'],  
+        "choices": ['add', 'delete', 'addmembers', 'delmembers'],  
         "type": 'str' 
     },
 
@@ -61,7 +61,7 @@ options:
         required: false
     members:
         description:
-            - comma separated hostnames to add to/remove from hostgroup
+            - pipe separated hostnames to add to/remove from hostgroup
             - Members MUST exist
         required: false
     action:
@@ -71,10 +71,10 @@ options:
             - C(add) adds hostgroup from configuration if needed
             - C(addmembers) adds hosts to hostgroups if needed
             - C(delete) removes hostgroup from configuration if needed
-            - C(removemembers) removes hosts from hostgroups 
+            - C(delmembers) removes hosts from hostgroups 
             - if needed
         required: true
-        choices: ['add', 'addmembers', 'delete', 'removemembers']
+        choices: ['add', 'addmembers', 'delete', 'delmembers']
         default: "add"
 '''
 
@@ -101,7 +101,7 @@ EXAMPLES = '''
         hostgroupname: testgroup
         action: delete
         
-#Adds, if needed, the following comma separated hosts to hostgroup testgroup
+#Adds, if needed, the following pipe separated hosts to hostgroup testgroup
 - hosts: localhost
   tasks:
     - name: add hosts to test hostgroup
@@ -109,10 +109,10 @@ EXAMPLES = '''
         username: clapi
         password: clapi
         hostgroupname: testgroup
-        members: server1,server2,server3
+        members: server1|server2|server3
         action: addmembers
         
-#Removes, if needed, server3 from hostgroup testgroup
+#Removes, if needed, server3 &4 from hostgroup testgroup
 - hosts: localhost
   tasks:
     - name: remove hosts from test hostgroup
@@ -120,8 +120,8 @@ EXAMPLES = '''
         username: clapi
         password: clapi
         hostgroupname: testgroup
-        members: server3
-        state: removemembers
+        members: server3|server4
+        state: delmembers
 '''
 
 def base_command(username, password):
@@ -145,7 +145,7 @@ def hostgroup_add(data):
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        return (True, {"present": "successfully added"})
+        return (True, {"added": "successfully added hostgroup"})
     else:
         if cmdout.find("Object already exists") == 0:
             return (False, {"present": cmdout})
@@ -157,11 +157,21 @@ def hostgroup_add(data):
             sys.exit(1)
 
 def hostgroup_addmembers(data):
-    print json.dumps({
-        "failed" : True,
-        "msg"    : "Not yet implemented"
-    })
-    sys.exit(1)
+    basecmd = base_command(data['username'], data['password'])
+    operation = " -o HG -a addmember"
+    #TODO Check w/ "-a getmember" each host individually before doing anything
+    varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
+    
+    (cmdout, rc) = run_command(basecmd+operation+varg)
+
+    if rc == 0:
+        return (True, {"added": "successfully added to hostgroup"})
+    else:
+        print json.dumps({
+            "failed" : True,
+            "msg"    : "centreon command failed with error: "+cmdout
+        })
+        sys.exit(1)
 
 def hostgroup_delete(data):
     basecmd = base_command(data['username'], data['password'])
@@ -170,7 +180,7 @@ def hostgroup_delete(data):
     (cmdout, rc) = run_command(basecmd+operation+varg)
 
     if rc == 0:
-        return (True, {"absent": "successfully removed"})
+        return (True, {"deleted": "successfully deleted hostgroup"})
     else:
         if cmdout.find("Object not found") == 0:
             return (False, {"absent": cmdout})
@@ -181,15 +191,24 @@ def hostgroup_delete(data):
             })
             sys.exit(1)
 
-def hostgroup_removemembers(data):
-    print json.dumps({
-        "failed" : True,
-        "msg"    : "Not yet implemented"
-    })
-    sys.exit(1)
+def hostgroup_delmembers(data):
+    basecmd = base_command(data['username'], data['password'])
+    operation = " -o HG -a delmember"
+    #TODO Check w/ "-a getmember" each host individually before doing anything
+    varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
+    
+    (cmdout, rc) = run_command(basecmd+operation+varg)
+
+    if rc == 0:
+        return (True, {"deleted": "successfully deleted from hostgroup"})
+    else:
+        print json.dumps({
+            "failed" : True,
+            "msg"    : "centreon command failed with error: "+cmdout
+        })
+        sys.exit(1)
 
 def main():
-
     fields = {
         "username": {"required": True, "type": "str"},
         "password": {"required": True, "type": "str"},
@@ -198,15 +217,15 @@ def main():
         "members": {"required": False, "type": "str"},
         "action": {
             "default": "add", 
-            "choices": ['add', 'addmembers', 'delete', 'removemembers'],  
+            "choices": ['add', 'addmembers', 'delete', 'delmembers'],  
             "type": 'str' 
         },
     }
     choice_map = {
       "add": hostgroup_add,
-      "addmember": hostgroup_addmembers,
+      "addmembers": hostgroup_addmembers,
       "delete": hostgroup_delete,
-      "removemembers": hostgroup_removemembers,
+      "delmembers": hostgroup_delmembers,
     }
 
     module = AnsibleModule(argument_spec=fields)
