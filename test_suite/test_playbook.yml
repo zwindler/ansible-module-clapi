@@ -1,0 +1,62 @@
+- hosts: all
+  tasks:
+    - name: add an host w/ clapi_host
+      clapi_host: 
+        username: "{{ centreon_clapi_username }}"
+        password: "{{ centreon_clapi_password }}"
+        hostname: "{{ inventory_hostname }}"
+        ipaddress: "{{ ansible_default_ipv4.address }}"
+        groupname: Ping_LAN
+        state: present
+      delegate_to: "{{centreon_server}}"
+      notify: "notify poller after modification"
+
+    - name: remove host w/ clapi_host
+      clapi_host:
+        username: "{{ centreon_clapi_username }}"
+        password: "{{ centreon_clapi_password }}"
+        hostname: "{{ inventory_hostname }}"
+        ipaddress: "{{ ansible_default_ipv4.address }}"
+        state: absent
+      delegate_to: "{{centreon_server}}"
+      notify: "notify poller after modification"
+
+    - name: remove another time host w/ clapi_host
+      clapi_host:
+        username: "{{ centreon_clapi_username }}"
+        password: "{{ centreon_clapi_password }}"
+        hostname: "{{ inventory_hostname }}"
+        ipaddress: "{{ ansible_default_ipv4.address }}"
+        state: absent
+      delegate_to: "{{centreon_server}}"
+      notify: "notify poller after modification"
+
+    - name: add another time host w/ clapi_host
+      clapi_host:
+        username: "{{ centreon_clapi_username }}"
+        password: "{{ centreon_clapi_password }}"
+        hostname: "{{ inventory_hostname }}"
+        ipaddress: "{{ ansible_default_ipv4.address }}"
+        groupname: Ping_LAN
+        state: present
+      delegate_to: "{{centreon_server}}"
+      notify: "notify poller after modification"
+
+	- name: add host to Server_Linux_NRPE hostgroup
+	  clapi_hostgroup:
+		username: '{{ centreon_clapi_username }}'
+		password: '{{ centreon_clapi_password }}'
+		hostgroupname: Server_Linux_NRPE
+		members: '{{ inventory_hostname }}'
+		action: addmembers
+	  delegate_to: '{{ centreon_poller }}'
+	  notify: "notify poller after modification"
+
+  handlers:
+    - name: notify poller after modification
+	  clapi_poller:
+		username: '{{ centreon_clapi_username }}'
+		password: '{{ centreon_clapi_password }}'
+		pollername: '{{ centreon_pollername }}'
+	  run_once: true
+	  delegate_to: '{{ centreon_poller }}'

@@ -1,0 +1,8 @@
+---
+#NRPE Servers
+nrpe_servers: ["192.168.100.10", "192.168.100.11"]
+#Poller Centreon
+centreon_server: "superviseur.company.lan"
+centreon_pollername : "Central"
+centreon_clapi_username : "admin"
+centreon_clapi_password : "admin"
