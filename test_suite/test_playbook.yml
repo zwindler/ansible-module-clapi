@@ -42,21 +42,21 @@
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 
-	- name: add host to Server_Linux_NRPE hostgroup
-	  clapi_hostgroup:
-		username: '{{ centreon_clapi_username }}'
-		password: '{{ centreon_clapi_password }}'
-		hostgroupname: Server_Linux_NRPE
-		members: '{{ inventory_hostname }}'
-		action: addmembers
-	  delegate_to: '{{ centreon_poller }}'
-	  notify: "notify poller after modification"
+    - name: add host to Server_Linux_NRPE hostgroup
+      clapi_hostgroup:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostgroupname: Server_Linux_NRPE
+        members: '{{ inventory_hostname }}'
+        action: addmembers
+      delegate_to: '{{ centreon_poller }}'
+      notify: "notify poller after modification"
 
   handlers:
     - name: notify poller after modification
-	  clapi_poller:
+      clapi_poller:
 		username: '{{ centreon_clapi_username }}'
 		password: '{{ centreon_clapi_password }}'
 		pollername: '{{ centreon_pollername }}'
-	  run_once: true
-	  delegate_to: '{{ centreon_poller }}'
+      run_once: true
+      delegate_to: '{{ centreon_poller }}'
