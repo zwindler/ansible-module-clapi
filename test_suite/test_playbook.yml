@@ -49,7 +49,7 @@
         hostgroupname: Server_Linux_NRPE
         members: '{{ inventory_hostname }}'
         action: addmembers
-      delegate_to: '{{ centreon_poller }}'
+      delegate_to: '{{ centreon_server }}'
       notify: "notify poller after modification"
 
   handlers:
@@ -59,4 +59,4 @@
         password: '{{ centreon_clapi_password }}'
         pollername: '{{ centreon_pollername }}'
       run_once: true
-      delegate_to: '{{ centreon_poller }}'
+      delegate_to: '{{ centreon_server }}'
