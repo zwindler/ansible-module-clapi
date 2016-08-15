@@ -55,8 +55,8 @@
   handlers:
     - name: notify poller after modification
       clapi_poller:
-		username: '{{ centreon_clapi_username }}'
-		password: '{{ centreon_clapi_password }}'
-		pollername: '{{ centreon_pollername }}'
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        pollername: '{{ centreon_pollername }}'
       run_once: true
       delegate_to: '{{ centreon_poller }}'
