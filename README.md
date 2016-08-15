@@ -24,7 +24,7 @@ On the contrary, these modules can be used in a regular *Configuration Managemen
 For this modules to work, you need to have:
 * Ansible installed somewhere (obviously). Version 2.0+ shoud be OK
 * a working connection between servers (aka keys exchanged)
-* a working centreon server (2.7+), with a poller, and at least some basic templates, services and hostgroups configuration.
+* a working centreon server (2.5+), with a poller, and at least some basic templates, services and hostgroups configuration.
 * an admin account on this centreon host (saddly, no "CLAPI only" user yet)
 
 The python files included in the module have been knowingly limited to Python v2.6 capability because CES (Centreon Entreprise Server) is a modified CentOS 6 which is shipped with Python 2.6.
