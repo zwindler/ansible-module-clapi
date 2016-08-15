@@ -11,7 +11,8 @@ Although you can just use **shell** or **command** ansible module to execute CLA
 Each time you execute a playbook with CLAPI as shell on a group of servers (some of whom may already have been added) this raises an error.
 ```
 TASK [monitor : centreon add host] *********************************************
-fatal: [srv-nouveau-01 -> superviseur.company.lan]: FAILED! => {'changed': true, 'cmd': '/usr/bin/centreon -u admin -p admin -o HOST -a add -v \'srv-nouveau-01;srv-nouveau-01;192.168.1.12;generic-host;central;Ping_LAN\'', 'delta': '0:00:00.098198', 'end': '2016-07-25 17:17:01.268410', 'failed': true, 'rc': 1, 'start': '2016-07-25 17:17:01.170212', 'stderr': '', 'stdout': 'Object already exists (srv-nouveau-01)', 'stdout_lines': ['Object already exists (srv-nouveau-01)'], 'warnings': []}
+fatal: [srv-nouveau-01 -> superviseur.company.lan]: 
+FAILED! => {'changed': true, 'cmd': '/usr/bin/centreon -u admin -p admin -o HOST -a add -v \'srv-nouveau-01;srv-nouveau-01;192.168.1.12;generic-host;central;Ping_LAN\'', 'delta': '0:00:00.098198', 'end': '2016-07-25 17:17:01.268410', 'failed': true, 'rc': 1, 'start': '2016-07-25 17:17:01.170212', 'stderr': '', 'stdout': 'Object already exists (srv-nouveau-01)', 'stdout_lines': ['Object already exists (srv-nouveau-01)'], 'warnings': []}
 ```
 
 You could just trap the error with *ignore_errors: True* but that could lead to unexpected trouble.
@@ -45,5 +46,4 @@ But to help users, I also added a sample in the *test_suite* directory including
  - remove it again to make sure this doesn't throw an error
  - add it again to continue test
  - add the host in a hostgroup
- - if any of these actions returned "Changed" attribute (all in fact)
-   * regenerate configuration and restart poller
+ - if any of these actions returned "Changed" attribute (all in fact): regenerate configuration and restart poller
