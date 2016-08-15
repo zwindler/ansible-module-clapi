@@ -1,8 +1,8 @@
-ansible_module_clapi 0.1
+# ansible_module_clapi v0.1
 
 This repository contains a few Python files that can be used by Ansible as modules to automate [Centreon](https://www.centreon.com/fr/) interactions.
 
-# Purpose of this repository
+## Purpose of this repository
 
 These Ansible modules act as an interface with [CLAPI (Centreon API)](https://documentation.centreon.com/docs/centreon-clapi/en/latest/).
 
@@ -18,7 +18,7 @@ You could just trap the error with *ignore_errors: True* but that could lead to 
 
 On the contrary, these modules can be used in a regular *Configuration Management* *policy* in which your servers are managed by groups by Ansible. The servers that don't need to be added/modified/removed won't be (the module is idempotent) and those who do will.
 
-# Installation
+## Installation
 
 For this modules to work, you need to have:
 * Ansible installed somewhere (obviously). Version 2.0+ shoud be OK
@@ -32,7 +32,7 @@ Because CLAPI is working on an actual Centreon node, to actually make CLAPI work
 * use the playbook directive "delegate_to : mycentreonserver"
 * install ansible **on** the centreon host and execute playbook from there
 
-# Examples
+## Examples
 
 Each individual module file contains a EXAMPLES variable, as specified by the developing Ansible modules guidelines. 
 
@@ -46,4 +46,4 @@ But to help users, I also added a sample in the *test_suite* directory including
  - add it again to continue test
  - add the host in a hostgroup
  - if any of these actions returned "Changed" attribute (all in fact)
-  * regenerate configuration and restart poller
+   * regenerate configuration and restart poller
