@@ -22,60 +22,60 @@ DOCUMENTATION = '''
 module: clapi_hostgroup
 short_description: Centreon CLAPI hostgroup creates/updates/deletes
 description:
-   - This module allows you to create, modify and delete Centreon hostgroups 
-   - More informations on CLAPI can be found on 
-   - https://documentation.centreon.com/docs/centreon-clapi/en/latest/
+  - This module allows you to create, modify and delete Centreon hostgroups 
+  - More informations on CLAPI can be found on 
+  - https://documentation.centreon.com/docs/centreon-clapi/en/latest/
 version_added: "0.1"
 author:
-    - "Denis GERMAIN (@zwindler)"
+  - "Denis GERMAIN (@zwindler)"
 requirements:
-    - "python >= 2.6"
-    - Centreon with CLAPI
+  - "python >= 2.6"
+  - Centreon with CLAPI
 options:
-    "username": {"required": True, "type": "str"},
-    "password": {"required": True, "type": "str"},
-    "hostgroupname": {"required": True, "type": "str"},
-    "hostgroupalias": {"required": False, "type": "str"},
-    "members": {"required": False, "type": "str"},
-    "action": {
-        "default": "add", 
-        "choices": ['add', 'delete', 'addmembers', 'delmembers'],  
-        "type": 'str' 
-    },
+  "username": {"required": True, "type": "str"},
+  "password": {"required": True, "type": "str"},
+  "hostgroupname": {"required": True, "type": "str"},
+  "hostgroupalias": {"required": False, "type": "str"},
+  "members": {"required": False, "type": "str"},
+  "action": {
+      "default": "add", 
+      "choices": ['add', 'delete', 'addmembers', 'delmembers'],  
+      "type": 'str' 
+  },
 
-    username:
-        description:
-            - Centreon username (must be admin to be allowed to use CLAPI)
-        required: true
-    password:
-        description:
-            - Centreon user password
-        required: true
-    hostgroupname:
-        description:
-            - hostgroupname to remove/add to centreon configuration
-        required: true
-    hostgroupalias:
-        description:
-            - hostgroupalias when you add a new hostgroup
-        required: false
-    members:
-        description:
-            - pipe separated hostnames to add to/remove from hostgroup
-            - Members MUST exist
-        required: false
-    action:
-        description:
-            - Choose whether the hostgroup must be present or absent or modified
-            - from Centreon configuration files
-            - C(add) adds hostgroup from configuration if needed
-            - C(addmembers) adds hosts to hostgroups if needed
-            - C(delete) removes hostgroup from configuration if needed
-            - C(delmembers) removes hosts from hostgroups 
-            - if needed
-        required: true
-        choices: ['add', 'addmembers', 'delete', 'delmembers']
-        default: "add"
+  username:
+    description:
+      - Centreon username (must be admin to be allowed to use CLAPI)
+    required: true
+  password:
+    description:
+      - Centreon user password
+    required: true
+  hostgroupname:
+    description:
+      - hostgroupname to remove/add to centreon configuration
+    required: true
+  hostgroupalias:
+    description:
+      - hostgroupalias when you add a new hostgroup
+    required: false
+  members:
+    description:
+      - pipe separated hostnames to add to/remove from hostgroup
+      - Members MUST exist
+    required: false
+  action:
+    description:
+      - Choose whether the hostgroup must be present or absent or modified
+      - from Centreon configuration files
+      - C(add) adds hostgroup from configuration if needed
+      - C(addmembers) adds hosts to hostgroups if needed
+      - C(delete) removes hostgroup from configuration if needed
+      - C(delmembers) removes hosts from hostgroups 
+      - if needed
+    required: true
+    choices: ['add', 'addmembers', 'delete', 'delmembers']
+    default: "add"
 '''
 
 EXAMPLES = '''
@@ -125,112 +125,112 @@ EXAMPLES = '''
 '''
 
 def base_command(username, password):
-    #TODO find centreon path
-    return "centreon -u "+username+" -p "+password
+  #TODO find centreon path
+  return "centreon -u "+username+" -p "+password
 
 def run_command(fullcmd):
-    proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
-    return proc.communicate()[0],proc.returncode
+  proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
+  return proc.communicate()[0],proc.returncode
 
 def hostgroup_add(data):
-    #building command
-    basecmd = base_command(data['username'], data['password'])
-    operation = " -o HG -a add"
-    varg = ' -v "'+data['hostgroupname']+';'
-    if data['hostgroupalias']:
-        varg += data['hostgroupalias']+';"'
-    else:
-        varg += data['hostgroupname']+';"'
-    #running full command
-    (cmdout, rc) = run_command(basecmd+operation+varg)
+  #building command
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HG -a add"
+  varg = ' -v "'+data['hostgroupname']+';'
+  if data['hostgroupalias']:
+    varg += data['hostgroupalias']+';"'
+  else:
+    varg += data['hostgroupname']+';"'
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    if rc == 0:
-        return (True, {"added": "successfully added hostgroup"})
+  if rc == 0:
+    return (True, {"added": "successfully added hostgroup"})
+  else:
+    if cmdout.find("Object already exists") == 0:
+      return (False, {"present": cmdout})
     else:
-        if cmdout.find("Object already exists") == 0:
-            return (False, {"present": cmdout})
-        else:
-            print json.dumps({
-                "failed" : True,
-                "msg"    : "centreon command failed with error: "+cmdout
-            })
-            sys.exit(1)
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command failed with error: "+cmdout
+      })
+      sys.exit(1)
 
 def hostgroup_addmembers(data):
-    basecmd = base_command(data['username'], data['password'])
-    operation = " -o HG -a addmember"
-    #TODO Check w/ "-a getmember" each host individually before doing anything
-    varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
-    
-    (cmdout, rc) = run_command(basecmd+operation+varg)
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HG -a addmember"
+  #TODO Check w/ "-a getmember" each host individually before doing anything
+  varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
+  
+  (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    if rc == 0:
-        return (True, {"added": "successfully added to hostgroup"})
-    else:
-        print json.dumps({
-            "failed" : True,
-            "msg"    : "centreon command failed with error: "+cmdout
-        })
-        sys.exit(1)
+  if rc == 0:
+    return (True, {"added": "successfully added to hostgroup"})
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon command failed with error: "+cmdout
+    })
+    sys.exit(1)
 
 def hostgroup_delete(data):
-    basecmd = base_command(data['username'], data['password'])
-    operation = " -o HG -a del"
-    varg = ' -v "'+data['hostgroupname']+'"'
-    (cmdout, rc) = run_command(basecmd+operation+varg)
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HG -a del"
+  varg = ' -v "'+data['hostgroupname']+'"'
+  (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    if rc == 0:
-        return (True, {"deleted": "successfully deleted hostgroup"})
+  if rc == 0:
+    return (True, {"deleted": "successfully deleted hostgroup"})
+  else:
+    if cmdout.find("Object not found") == 0:
+      return (False, {"absent": cmdout})
     else:
-        if cmdout.find("Object not found") == 0:
-            return (False, {"absent": cmdout})
-        else:
-            print json.dumps({
-                "failed" : True,
-                "msg"    : "centreon command failed with error: "+cmdout
-            })
-            sys.exit(1)
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command failed with error: "+cmdout
+      })
+      sys.exit(1)
 
 def hostgroup_delmembers(data):
-    basecmd = base_command(data['username'], data['password'])
-    operation = " -o HG -a delmember"
-    #TODO Check w/ "-a getmember" each host individually before doing anything
-    varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
-    
-    (cmdout, rc) = run_command(basecmd+operation+varg)
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HG -a delmember"
+  #TODO Check w/ "-a getmember" each host individually before doing anything
+  varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
+  
+  (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    if rc == 0:
-        return (True, {"deleted": "successfully deleted from hostgroup"})
-    else:
-        print json.dumps({
-            "failed" : True,
-            "msg"    : "centreon command failed with error: "+cmdout
-        })
-        sys.exit(1)
+  if rc == 0:
+    return (True, {"deleted": "successfully deleted from hostgroup"})
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon command failed with error: "+cmdout
+    })
+    sys.exit(1)
 
 def main():
-    fields = {
-        "username": {"required": True, "type": "str"},
-        "password": {"required": True, "type": "str"},
-        "hostgroupname": {"required": True, "type": "str"},
-        "hostgroupalias": {"required": False, "type": "str"},
-        "members": {"required": False, "type": "str"},
-        "action": {
-            "default": "add", 
-            "choices": ['add', 'addmembers', 'delete', 'delmembers'],  
-            "type": 'str' 
-        },
-    }
-    choice_map = {
-      "add": hostgroup_add,
-      "addmembers": hostgroup_addmembers,
-      "delete": hostgroup_delete,
-      "delmembers": hostgroup_delmembers,
-    }
+  fields = {
+    "username": {"required": True, "type": "str"},
+    "password": {"required": True, "type": "str"},
+    "hostgroupname": {"required": True, "type": "str"},
+    "hostgroupalias": {"required": False, "type": "str"},
+    "members": {"required": False, "type": "str"},
+    "action": {
+      "default": "add", 
+      "choices": ['add', 'addmembers', 'delete', 'delmembers'],  
+      "type": 'str' 
+    },
+  }
+  choice_map = {
+    "add": hostgroup_add,
+    "addmembers": hostgroup_addmembers,
+    "delete": hostgroup_delete,
+    "delmembers": hostgroup_delmembers,
+  }
 
-    module = AnsibleModule(argument_spec=fields)
-    has_changed, result = choice_map.get(module.params['action'])(module.params)
-    module.exit_json(changed=has_changed, meta=result)
+  module = AnsibleModule(argument_spec=fields)
+  has_changed, result = choice_map.get(module.params['action'])(module.params)
+  module.exit_json(changed=has_changed, meta=result)
 
 from ansible.module_utils.basic import *
 import shlex, subprocess, sys

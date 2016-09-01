@@ -7,7 +7,7 @@
         hostname: "{{ inventory_hostname }}"
         ipaddress: "{{ ansible_default_ipv4.address }}"
         groupname: Ping_LAN
-        state: present
+        action: add
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 
@@ -17,7 +17,7 @@
         password: "{{ centreon_clapi_password }}"
         hostname: "{{ inventory_hostname }}"
         ipaddress: "{{ ansible_default_ipv4.address }}"
-        state: absent
+        action: delete
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 
@@ -27,7 +27,7 @@
         password: "{{ centreon_clapi_password }}"
         hostname: "{{ inventory_hostname }}"
         ipaddress: "{{ ansible_default_ipv4.address }}"
-        state: absent
+        action: delete
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 
@@ -38,7 +38,7 @@
         hostname: "{{ inventory_hostname }}"
         ipaddress: "{{ ansible_default_ipv4.address }}"
         groupname: Ping_LAN
-        state: present
+        action: add
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 

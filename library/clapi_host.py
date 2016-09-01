@@ -22,70 +22,73 @@ DOCUMENTATION = '''
 module: clapi_host
 short_description: Centreon CLAPI host creates/updates/deletes
 description:
-   - This module allows you to create, modify and delete Centreon host entries 
-   - and associated group and template data. More informations on CLAPI can be 
-   - found on https://documentation.centreon.com/docs/centreon-clapi/en/latest/
+ - This module allows you to create, modify and delete Centreon host entries 
+ - and associated group and template data. More informations on CLAPI can be 
+ - found on https://documentation.centreon.com/docs/centreon-clapi/en/latest/
 version_added: "0.1"
 author:
-    - "Denis GERMAIN (@zwindler)"
+  - "Denis GERMAIN (@zwindler)"
 requirements:
-    - "python >= 2.6"
-    - Centreon with CLAPI
+  - "python >= 2.6"
+  - Centreon with CLAPI
 options:
-    "username": {"required": True, "type": "str"},
-    "password": {"required": True, "type": "str"},
-    "hostname": {"required": True, "type": "str"},
-    "ipaddress": {"default": "127.0.0.1", "type": "str"},
-    "hosttemplate": {"default": "generic-host", "type": "str"},
-    "pollername": {"default": "Central", "type": "str"},
-    "groupname": {"type": "str"},
-    "state": {
-        "default": "present", 
-            "choices": ['present', 'absent'],  
-            "type": 'str' 
-        },
+  "username": {"required": True, "type": "str"},
+  "password": {"required": True, "type": "str"},
+  "hostname": {"required": True, "type": "str"},
+  "ipaddress": {"default": "127.0.0.1", "type": "str"},
+  "hosttemplate": {"default": "generic-host", "type": "str"},
+  "pollername": {"default": "Central", "type": "str"},
+  "groupname": {"type": "str"},
+  "action": {
+    "default": "add", 
+      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl'],  
+      "type": 'str' 
+    },
 
-    username:
-        description:
+  username:
+    description:
 			- Centreon username (must be admin to be allowed to use CLAPI)
-        required: true
-    password:
-        description:
+    required: true
+  password:
+    description:
 			- Centreon user password
-        required: true
-    hostname:
+    required: true
+  hostname:
 		description:
 			- hostname to remove/add to centreon configuration
-        required: true
+    required: true
 	ipaddress:
 		description:
 			- ip address of the hostname to remove/add to centreon configuration
-			- not useful when using absent state (remove host) so 127.0.0.1 by default
-        required: true
+			- not useful when using delete action (remove host) so 127.0.0.1 by default
+    required: true
 		default: "127.0.0.1"
 	hosttemplate:
-        description:
-			- Affects added host to host template. By design Centreon requires a host template for each hosts
-			- By default, a generic-host template is created at Centreon initialisation
-        required: true
-        default: "generic-host"
+    description:
+      - Affects added host to host template. By design Centreon requires a host template for each hosts
+      - By default, a generic-host template is created at Centreon initialisation
+    required: true
+    default: "generic-host"
 	groupname:
-        description:
-            - Optional group for added host
-        required: false
-    pollername:
-        description:
-            - Select which Centreon host (poller) is targeted. By design, first Centreon poller is called Central
-        required: false
-        default: "Central"
-    state:
-        description:
-            - Choose whether the host must be present or absent from Centreon poller configuration file
-            - C(absent) removes host from configuration if needed
-            - C(present) adds host from configuration if needed
-        required: true
-        choices: ['absent', 'present']
-        default: "present"
+    description:
+      - Optional group for added host
+    required: false
+  pollername:
+    description:
+      - Select which Centreon host (poller) is targeted. By design, first Centreon poller is called Central
+    required: false
+    default: "Central"
+  action:
+    description:
+      - Choose whether the host must be add or delete or modified from Centreon poller configuration file
+      - C(add) adds host from configuration if needed
+      - C(addtemplate) adds pipe separated templates to host
+      - C(applytpl) refresh templates to host
+      - C(delete) removes host from configuration if needed
+      - C(deltemplate) deletes pipe separated templates to host
+    required: true
+    choices: ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl']
+    default: "add"
 '''
 
 EXAMPLES = '''
@@ -99,7 +102,7 @@ EXAMPLES = '''
     hostname: newserver
     ipaddress: 192.168.132.100
     groupname: Ping_LAN
-    state: present
+    action: add
   delegate_to: ces
   notify: "notify poller after modification"
 
@@ -109,7 +112,7 @@ EXAMPLES = '''
     username: clapi
     password: clapi
     hostname: newserver
-    state: absent
+    action: delete
     
 #for better automation, consider using roles, facts and variables
 #notification to clapi_poller module for restart
@@ -121,87 +124,170 @@ EXAMPLES = '''
     ipaddress: '{{ ansible_default_ipv4.address }}'
     groupname: Ping_LAN
     pollername: '{{ centreon_pollername }}'
-    state: present
+    action: add
   delegate_to: '{{ centreon_poller }}'
   notify: "notify poller after modification"
+
+#Adds, if needed, the following pipe separated host templates to host
+- hosts: localhost
+  tasks:
+    - name: add host templates to server1
+      clapi_host:
+        username: clapi
+        password: clapi
+        hosttemplate: template1|template2
+        members: server1
+        action: addmtemplate
+        
+#Removes, if needed, pipe separated host templates to host
+- hosts: localhost
+  tasks:
+    - name: remove host templates to server1
+      clapi_host:
+        username: clapi
+        password: clapi
+        hosttemplate: template1|template2
+        members: server1
+        action: deltemplate
+
+#Apply template to host
+ - hosts: localhost
+  tasks:
+    - name: apply  host templates to server1
+      clapi_host:
+        username: clapi
+        password: clapi
+        members: server1
+        action: applytpl       
 '''
 
 def base_command(username, password):
-    #TODO find centreon path
-    return "centreon -u "+username+" -p "+password
+  #TODO find centreon path
+  return "centreon -u "+username+" -p "+password
 
 def run_command(fullcmd):
-    proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
-    return proc.communicate()[0],proc.returncode
+  proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
+  return proc.communicate()[0],proc.returncode
 
-def host_absent(data):
-    #building command
-    basecmd = base_command(data['username'], data['password'])
-    operation = " -o HOST -a del"
-    varg = ' -v "'+data['hostname']+'"'
+def host_add(data):
+  #building command
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a add "
+  varg = '-v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
+  if data['groupname']: varg += data['groupname']+';'
+  varg += '"'
 
-    #running full command
-    (cmdout, rc) = run_command(basecmd+operation+varg)
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    if rc == 0:
-        return (True, {"absent": "successfully removed"})
+  if rc == 0:
+    return (True, {"add": "successfully added "+data['hostname']})
+  else:
+    if cmdout.find("Object already exists") == 0:
+      return (False, {"add": cmdout})
     else:
-        if cmdout.find("Object not found") == 0:
-            return (False, {"absent": cmdout})
-        else:
-            print json.dumps({
-                "failed" : True,
-                "msg"    : "centreon command failed with error: "+cmdout
-            })
-            sys.exit(1)
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command failed with error: "+cmdout
+      })
+      sys.exit(1)
 
-def host_present(data):
-    #building command
-    basecmd = base_command(data['username'], data['password'])
-    operation = " -o HOST -a add "
-    varg = '-v "'+data['hostname']+';'+data['hostname']+';'+data['ipaddress']+';'+data['hosttemplate']+';'+data['pollername']+';'
-    if data['groupname']: varg += data['groupname']+';'
-    varg += '"'
+def host_addtemplate(data):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a addtemplate"
+  varg = ' -v "'+data['hostname']+';'+data['hosttemplate']+'"'
+  
+  (cmdout, rc) = run_command(basecmd+operation+varg)
 
-    #running full command
-    (cmdout, rc) = run_command(basecmd+operation+varg)
+  if rc == 0:
+    return (True, {"added": "successfully added template "+data['hosttemplate']+" to host"+data['hosttemplate']})
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon command failed with error: "+cmdout
+    })
+    sys.exit(1)
+        
+def host_applytpl(data):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a applytpl"
+  varg = ' -v "'+data['hostname']+'"'
 
-    if rc == 0:
-        return (True, {"present": "successfully added"})
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
+
+  if rc == 0:
+    return (True, {"added": "successfully applied templates to host"+data['hosttemplate']})
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon command failed with error: "+cmdout
+    })
+    sys.exit(1)
+
+def host_delete(data):
+  #building command
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a del"
+  varg = ' -v "'+data['hostname']+'"'
+
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
+
+  if rc == 0:
+    return (True, {"delete": "successfully removed"+data['hostname']})
+  else:
+    if cmdout.find("Object not found") == 0:
+      return (False, {"delete": cmdout})
     else:
-        if cmdout.find("Object already exists") == 0:
-            return (False, {"present": cmdout})
-        else:
-            print json.dumps({
-                "failed" : True,
-                "msg"    : "centreon command failed with error: "+cmdout
-            })
-            sys.exit(1)
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command failed with error: "+cmdout
+      })
+      sys.exit(1)
 
+def host_deltemplate(data):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a deltemplate"
+  varg = ' -v "'+data['hostname']+';'+data['hosttemplate']+'"'
+  
+  (cmdout, rc) = run_command(basecmd+operation+varg)
+
+  if rc == 0:
+    return (True, {"deleted": "successfully deleted template "+data['hosttemplate']+" from host"+data['hosttemplate']})
+  else:
+    print json.dumps({
+    "failed" : True,
+    "msg"    : "centreon command failed with error: "+cmdout
+    })
+    sys.exit(1)
+            
 def main():
+  fields = {
+    "username": {"required": True, "type": "str"},
+    "password": {"required": True, "type": "str"},
+    "hostname": {"required": True, "type": "str"},
+    "ipaddress": {"default": "127.0.0.1", "type": "str"},
+    "hosttemplate": {"default": "generic-host", "type": "str"},
+    "pollername": {"default": "Central", "type": "str"},
+    "groupname": {"type": "str"},
+    "action": {
+      "default": "add", 
+      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl'],  
+      "type": 'str' 
+    },
+  }
+  choice_map = {
+    "add": host_add,
+    "addtemplate": host_addtemplate,     
+    "delete": host_delete,
+    "deltemplate": host_deltemplate,
+    "applytpl": host_applytpl,
+  }
 
-    fields = {
-        "username": {"required": True, "type": "str"},
-        "password": {"required": True, "type": "str"},
-        "hostname": {"required": True, "type": "str"},
-        "ipaddress": {"default": "127.0.0.1", "type": "str"},
-        "hosttemplate": {"default": "generic-host", "type": "str"},
-        "pollername": {"default": "Central", "type": "str"},
-        "groupname": {"type": "str"},
-        "state": {
-            "default": "present", 
-            "choices": ['present', 'absent'],  
-            "type": 'str' 
-        },
-    }
-    choice_map = {
-      "present": host_present,
-      "absent": host_absent, 
-    }
-
-    module = AnsibleModule(argument_spec=fields)
-    has_changed, result = choice_map.get(module.params['state'])(module.params)
-    module.exit_json(changed=has_changed, meta=result)
+  module = AnsibleModule(argument_spec=fields)
+  has_changed, result = choice_map.get(module.params['action'])(module.params)
+  module.exit_json(changed=has_changed, meta=result)
 
 from ansible.module_utils.basic import *
 import shlex, subprocess, sys
