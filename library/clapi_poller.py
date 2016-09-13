@@ -22,8 +22,8 @@ DOCUMENTATION = '''
 module: clapi_poller
 short_description: Centreon CLAPI poller config generation and restart
 description:
-  - This module allows you to generate config and restart Centreon pollers 
-  - More informations on CLAPI can be found on 
+  - This module allows you to generate config and restart Centreon pollers
+  - More informations on CLAPI can be found on
   - https://documentation.centreon.com/docs/centreon-clapi/en/latest/
 version_added: "0.1"
 author:
@@ -31,20 +31,24 @@ author:
 requirements:
   - "python >= 2.6"
   - Centreon with CLAPI
+
 options:
   username:
     description:
       - Centreon username (must be admin to be allowed to use CLAPI)
     required: true
+
   password:
     description:
       - Centreon user password
     required: true
+
   pollername:
     description:
       - Select which Centreon host (poller) is targeted. By design, first Centreon poller is called Central
     required: false
     default: "Central"
+
   action:
     description:
       - Choose which action is applied to Centreon poller
@@ -59,24 +63,24 @@ options:
 '''
 
 EXAMPLES = '''
-#Use this as a handler to APPLYCFG on Central poller if there is a modification
-#In this case, playbook is not executed on a Centreon host so delegate_to is used
+# Use this as a handler to APPLYCFG on Central poller if there is a modification
+# In this case, playbook is not executed on a Centreon host so delegate_to is used
 handlers:
   - name: notify poller after modification
     clapi_poller:
       username: clapi
       password: clapi
     delegate_to: ces
-  
-#Generate configuration on "somesite" centreon poller
+
+# Generate configuration on "somesite" centreon poller
   - name: notify poller after modification
     clapi_poller:
       username: clapi
       password: clapi
       pollername: somesite
       action : POLLERGENERATE
-     
-#Use roles, groups and vars for better automation
+
+# Use roles, groups and vars for better automation
 - name: notify poller after modification
   clapi_poller:
     username: clapi
@@ -117,9 +121,9 @@ def main():
     "password": {"required": True, "type": "str"},
     "pollername": {"default": "Central", "type": "str"},
     "action": {
-      "default": "APPLYCFG", 
-      "choices": ['POLLERGENERATE', 'POLLERTEST', 'CFGMOVE', 'POLLERRESTART', 'APPLYCFG'],  
-      "type": 'str' 
+      "default": "APPLYCFG",
+      "choices": ['POLLERGENERATE', 'POLLERTEST', 'CFGMOVE', 'POLLERRESTART', 'APPLYCFG'],
+      "type": 'str'
     },
   }
 
@@ -131,5 +135,5 @@ def main():
 from ansible.module_utils.basic import *
 import shlex, subprocess, sys
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     main()
