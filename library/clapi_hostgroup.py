@@ -22,8 +22,8 @@ DOCUMENTATION = '''
 module: clapi_hostgroup
 short_description: Centreon CLAPI hostgroup creates/updates/deletes
 description:
-  - This module allows you to create, modify and delete Centreon hostgroups 
-  - More informations on CLAPI can be found on 
+  - This module allows you to create, modify and delete Centreon hostgroups
+  - More informations on CLAPI can be found on
   - https://documentation.centreon.com/docs/centreon-clapi/en/latest/
 version_added: "0.1"
 author:
@@ -32,38 +32,32 @@ requirements:
   - "python >= 2.6"
   - Centreon with CLAPI
 options:
-  "username": {"required": True, "type": "str"},
-  "password": {"required": True, "type": "str"},
-  "hostgroupname": {"required": True, "type": "str"},
-  "hostgroupalias": {"required": False, "type": "str"},
-  "members": {"required": False, "type": "str"},
-  "action": {
-      "default": "add", 
-      "choices": ['add', 'delete', 'addmembers', 'delmembers'],  
-      "type": 'str' 
-  },
-
   username:
     description:
       - Centreon username (must be admin to be allowed to use CLAPI)
     required: true
+
   password:
     description:
       - Centreon user password
     required: true
+
   hostgroupname:
     description:
       - hostgroupname to remove/add to centreon configuration
     required: true
+
   hostgroupalias:
     description:
       - hostgroupalias when you add a new hostgroup
     required: false
+
   members:
     description:
       - pipe separated hostnames to add to/remove from hostgroup
       - Members MUST exist
     required: false
+
   action:
     description:
       - Choose whether the hostgroup must be present or absent or modified
@@ -71,7 +65,7 @@ options:
       - C(add) adds hostgroup from configuration if needed
       - C(addmembers) adds hosts to hostgroups if needed
       - C(delete) removes hostgroup from configuration if needed
-      - C(delmembers) removes hosts from hostgroups 
+      - C(delmembers) removes hosts from hostgroups
       - if needed
     required: true
     choices: ['add', 'addmembers', 'delete', 'delmembers']
@@ -79,7 +73,7 @@ options:
 '''
 
 EXAMPLES = '''
-#Adds a test hostgroup, delegated to centreon poller "ces"
+# Adds a test hostgroup, delegated to centreon poller "ces"
 - hosts: localhost
   tasks:
     - name: add test hostgroup
@@ -90,8 +84,8 @@ EXAMPLES = '''
         hostgroupalias: "my test group"
         action: add
       delegate_to: ces
-      
-#Deletes a test hostgroup
+
+# Deletes a test hostgroup
 - hosts: localhost
   tasks:
     - name: add test hostgroup
@@ -100,8 +94,8 @@ EXAMPLES = '''
         password: clapi
         hostgroupname: testgroup
         action: delete
-        
-#Adds, if needed, the following pipe separated hosts to hostgroup testgroup
+
+# Adds, if needed, the following pipe separated hosts to hostgroup testgroup
 - hosts: localhost
   tasks:
     - name: add hosts to test hostgroup
@@ -111,8 +105,8 @@ EXAMPLES = '''
         hostgroupname: testgroup
         members: server1|server2|server3
         action: addmembers
-        
-#Removes, if needed, server3 &4 from hostgroup testgroup
+
+# Removes, if needed, server3 &4 from hostgroup testgroup
 - hosts: localhost
   tasks:
     - name: remove hosts from test hostgroup
@@ -161,7 +155,7 @@ def hostgroup_addmembers(data):
   operation = " -o HG -a addmember"
   #TODO Check w/ "-a getmember" each host individually before doing anything
   varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
-  
+
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
@@ -196,7 +190,7 @@ def hostgroup_delmembers(data):
   operation = " -o HG -a delmember"
   #TODO Check w/ "-a getmember" each host individually before doing anything
   varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
-  
+
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
@@ -216,9 +210,9 @@ def main():
     "hostgroupalias": {"required": False, "type": "str"},
     "members": {"required": False, "type": "str"},
     "action": {
-      "default": "add", 
-      "choices": ['add', 'addmembers', 'delete', 'delmembers'],  
-      "type": 'str' 
+      "default": "add",
+      "choices": ['add', 'addmembers', 'delete', 'delmembers'],
+      "type": 'str'
     },
   }
   choice_map = {
@@ -235,5 +229,5 @@ def main():
 from ansible.module_utils.basic import *
 import shlex, subprocess, sys
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     main()

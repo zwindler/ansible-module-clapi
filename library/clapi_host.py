@@ -22,62 +22,57 @@ DOCUMENTATION = '''
 module: clapi_host
 short_description: Centreon CLAPI host creates/updates/deletes
 description:
- - This module allows you to create, modify and delete Centreon host entries 
- - and associated group and template data. More informations on CLAPI can be 
- - found on https://documentation.centreon.com/docs/centreon-clapi/en/latest/
+ - This module allows you to create, modify and delete Centreon host entries
+   and associated group and template data. More informations on CLAPI can be
+   found on https://documentation.centreon.com/docs/centreon-clapi/en/latest/
 version_added: "0.1"
-author:
-  - "Denis GERMAIN (@zwindler)"
+author: "Denis GERMAIN (@zwindler)"
+
 requirements:
   - "python >= 2.6"
   - Centreon with CLAPI
-options:
-  "username": {"required": True, "type": "str"},
-  "password": {"required": True, "type": "str"},
-  "hostname": {"required": True, "type": "str"},
-  "ipaddress": {"default": "127.0.0.1", "type": "str"},
-  "hosttemplate": {"default": "generic-host", "type": "str"},
-  "pollername": {"default": "Central", "type": "str"},
-  "groupname": {"type": "str"},
-  "action": {
-    "default": "add", 
-      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl'],  
-      "type": 'str' 
-    },
 
+options:
   username:
     description:
-			- Centreon username (must be admin to be allowed to use CLAPI)
+      - Centreon username (must be admin to be allowed to use CLAPI)
     required: true
+
   password:
     description:
-			- Centreon user password
+      - Centreon user password
     required: true
+
   hostname:
-		description:
-			- hostname to remove/add to centreon configuration
+    description:
+      - hostname to remove/add to centreon configuration
     required: true
-	ipaddress:
-		description:
-			- ip address of the hostname to remove/add to centreon configuration
-			- not useful when using delete action (remove host) so 127.0.0.1 by default
+
+  ipaddress:
+    description:
+      - ip address of the hostname to remove/add to centreon configuration
+      - not useful when using delete action (remove host) so 127.0.0.1 by default
     required: true
-		default: "127.0.0.1"
-	hosttemplate:
+    default: "127.0.0.1"
+
+  hosttemplate:
     description:
       - Affects added host to host template. By design Centreon requires a host template for each hosts
       - By default, a generic-host template is created at Centreon initialisation
     required: true
     default: "generic-host"
-	groupname:
+
+  groupname:
     description:
       - Optional group for added host
     required: false
+
   pollername:
     description:
       - Select which Centreon host (poller) is targeted. By design, first Centreon poller is called Central
     required: false
     default: "Central"
+
   action:
     description:
       - Choose whether the host must be add or delete or modified from Centreon poller configuration file
@@ -92,11 +87,11 @@ options:
 '''
 
 EXAMPLES = '''
-#Add host "newserver" to Central poller with IP and group
-#Delegate if playbook is launched through a non centreon host
-#Notification (handlers) to clapi_poller module can be useful
+# Add host "newserver" to Central poller with IP and group
+# Delegate if playbook is launched through a non centreon host
+# Notification (handlers) to clapi_poller module can be useful
 - name: add an host w/ clapi_host
-  clapi_host: 
+  clapi_host:
     username: clapi
     password: clapi
     hostname: newserver
@@ -106,16 +101,16 @@ EXAMPLES = '''
   delegate_to: ces
   notify: "notify poller after modification"
 
-#remove hostname "newserver" from Centreon configuration
+# remove hostname "newserver" from Centreon configuration
 - name: remove host w/ clapi_host
   clapi_host:
     username: clapi
     password: clapi
     hostname: newserver
     action: delete
-    
-#for better automation, consider using roles, facts and variables
-#notification to clapi_poller module for restart
+
+# for better automation, consider using roles, facts and variables
+# notification to clapi_poller module for restart
 - name: add host w/ clapi_host
   clapi_host:
     username: clapi
@@ -128,7 +123,7 @@ EXAMPLES = '''
   delegate_to: '{{ centreon_poller }}'
   notify: "notify poller after modification"
 
-#Adds, if needed, the following pipe separated host templates to host
+# Adds, if needed, the following pipe separated host templates to host
 - hosts: localhost
   tasks:
     - name: add host templates to server1
@@ -138,8 +133,8 @@ EXAMPLES = '''
         hosttemplate: template1|template2
         members: server1
         action: addmtemplate
-        
-#Removes, if needed, pipe separated host templates to host
+
+# Removes, if needed, pipe separated host templates to host
 - hosts: localhost
   tasks:
     - name: remove host templates to server1
@@ -150,15 +145,15 @@ EXAMPLES = '''
         members: server1
         action: deltemplate
 
-#Apply template to host
- - hosts: localhost
+# Apply template to host
+- hosts: localhost
   tasks:
     - name: apply  host templates to server1
       clapi_host:
         username: clapi
         password: clapi
         members: server1
-        action: applytpl       
+        action: applytpl
 '''
 
 def base_command(username, password):
@@ -196,7 +191,7 @@ def host_addtemplate(data):
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a addtemplate"
   varg = ' -v "'+data['hostname']+';'+data['hosttemplate']+'"'
-  
+
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
@@ -207,7 +202,7 @@ def host_addtemplate(data):
       "msg"    : "centreon command failed with error: "+cmdout
     })
     sys.exit(1)
-        
+
 def host_applytpl(data):
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a applytpl"
@@ -250,7 +245,7 @@ def host_deltemplate(data):
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a deltemplate"
   varg = ' -v "'+data['hostname']+';'+data['hosttemplate']+'"'
-  
+
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
@@ -261,7 +256,7 @@ def host_deltemplate(data):
     "msg"    : "centreon command failed with error: "+cmdout
     })
     sys.exit(1)
-            
+
 def main():
   fields = {
     "username": {"required": True, "type": "str"},
@@ -272,14 +267,14 @@ def main():
     "pollername": {"default": "Central", "type": "str"},
     "groupname": {"type": "str"},
     "action": {
-      "default": "add", 
-      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl'],  
-      "type": 'str' 
+      "default": "add",
+      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl'],
+      "type": 'str'
     },
   }
   choice_map = {
     "add": host_add,
-    "addtemplate": host_addtemplate,     
+    "addtemplate": host_addtemplate,
     "delete": host_delete,
     "deltemplate": host_deltemplate,
     "applytpl": host_applytpl,
@@ -292,5 +287,5 @@ def main():
 from ansible.module_utils.basic import *
 import shlex, subprocess, sys
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     main()
