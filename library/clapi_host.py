@@ -164,7 +164,50 @@ def run_command(fullcmd):
   proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
   return proc.communicate()[0],proc.returncode
 
+def host_presence(data):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a show"
+
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation)
+
+  if rc == 0:
+    for line in cmdout.split('\n'):
+      if line and line.split(";")[1] == data['hostname']:
+        return True
+    return False
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon SHOW command failed with error: "+cmdout
+    })
+    sys.exit(1)
+
+def host_template_presence(data):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a gettemplate"
+  varg = ' -v "'+data['hostname']+'"'
+  
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
+
+  if rc == 0:
+    for line in cmdout.split('\n'):
+      if line and line.split(";")[1] == data['hosttemplate']:
+        return True
+    return False
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon GETTEMPLATE command failed with error: "+cmdout
+    })
+    sys.exit(1)
+    
 def host_add(data):
+  #check if host is already present
+  if host_presence(data):
+    return (False, {"add": "host "+data['hostname'] + " already exists"})
+  
   #building command
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a add "
@@ -183,11 +226,15 @@ def host_add(data):
     else:
       print json.dumps({
         "failed" : True,
-        "msg"    : "centreon command failed with error: "+cmdout
+        "msg"    : "centreon command ADD failed with error: "+cmdout
       })
       sys.exit(1)
 
 def host_addtemplate(data):
+  #check if host template is already present
+  if host_template_presence(data):
+    return (False, {"add": "host template "+data['hosttemplate'] + " is already a template for "+data['hostname']})
+  
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a addtemplate"
   varg = ' -v "'+data['hostname']+';'+data['hosttemplate']+'"'
@@ -195,11 +242,11 @@ def host_addtemplate(data):
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
-    return (True, {"added": "successfully added template "+data['hosttemplate']+" to host"+data['hosttemplate']})
+    return (True, {"added": "successfully added template "+data['hosttemplate']+" to host "+data['hosttemplate']})
   else:
     print json.dumps({
       "failed" : True,
-      "msg"    : "centreon command failed with error: "+cmdout
+      "msg"    : "centreon command ADDTEMPLATE failed with error: "+cmdout
     })
     sys.exit(1)
 
@@ -212,15 +259,19 @@ def host_applytpl(data):
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
-    return (True, {"added": "successfully applied templates to host"+data['hosttemplate']})
+    return (True, {"added": "successfully applied templates to host "+data['hosttemplate']})
   else:
     print json.dumps({
       "failed" : True,
-      "msg"    : "centreon command failed with error: "+cmdout
+      "msg"    : "centreon command APPLYTPL failed with error: "+cmdout
     })
     sys.exit(1)
 
 def host_delete(data):
+  #check if host is already present
+  if not host_presence(data):
+    return (False, {"delete": "host "+data['hostname'] + " already absent"})
+  
   #building command
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a del"
@@ -230,18 +281,22 @@ def host_delete(data):
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
-    return (True, {"delete": "successfully removed"+data['hostname']})
+    return (True, {"delete": "successfully removed "+data['hostname']})
   else:
     if cmdout.find("Object not found") == 0:
       return (False, {"delete": cmdout})
     else:
       print json.dumps({
         "failed" : True,
-        "msg"    : "centreon command failed with error: "+cmdout
+        "msg"    : "centreon command DEL failed with error: "+cmdout
       })
       sys.exit(1)
 
 def host_deltemplate(data):
+  #check if host template is already present
+  if not host_template_presence(data):
+    return (False, {"deltemplate": "host template "+data['hosttemplate'] + " isn't a template for "+data['hostname']})
+
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HOST -a deltemplate"
   varg = ' -v "'+data['hostname']+';'+data['hosttemplate']+'"'
@@ -253,7 +308,7 @@ def host_deltemplate(data):
   else:
     print json.dumps({
     "failed" : True,
-    "msg"    : "centreon command failed with error: "+cmdout
+    "msg"    : "centreon command DELTEMPLATE failed with error: "+cmdout
     })
     sys.exit(1)
 
@@ -285,7 +340,7 @@ def main():
   module.exit_json(changed=has_changed, meta=result)
 
 from ansible.module_utils.basic import *
-import shlex, subprocess, sys
+import shlex, subprocess, sys, string
 
 if __name__ == '__main__':
     main()
