@@ -42,6 +42,35 @@
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 
+    - name: delete hostgroup testgroup
+      clapi_hostgroup:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostgroupname: testgroup
+        action: delete
+      delegate_to: '{{ centreon_server }}'
+      notify: "notify poller after modification"
+
+    - name: add testgroup hostgroup
+      clapi_hostgroup:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostgroupname: testgroup
+        hostgroupalias: "my test group"
+        action: add
+      delegate_to: '{{ centreon_server }}'
+      notify: "notify poller after modification"
+
+    - name: add testgroup hostgroup once again
+      clapi_hostgroup:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostgroupname: testgroup
+        hostgroupalias: "my test group"
+        action: add
+      delegate_to: '{{ centreon_server }}'
+      notify: "notify poller after modification"
+
     - name: add host to OS_Linux hostgroup
       clapi_hostgroup:
         username: '{{ centreon_clapi_username }}'
