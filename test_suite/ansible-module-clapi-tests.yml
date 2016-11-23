@@ -100,8 +100,8 @@
         action: addtemplate
       delegate_to: '{{ centreon_server }}'
       notify:
-        - "notify poller after modification"
         - "apply template services to host"
+        - "notify poller after modification"
 
   handlers:
     - name: apply template services to host
