@@ -126,7 +126,29 @@ def run_command(fullcmd):
   proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
   return proc.communicate()[0],proc.returncode
 
+def hostgroup_has_host(data, host):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HG -a getmember"
+  varg = ' -v "'+data['hostgroupname']+'"'
+  
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
+
+  if rc == 0:
+    for line in cmdout.split('\n'):
+      if line and line.split(";")[1] == host:
+        return True
+    return False
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon GETMEMBER command failed with error: "+cmdout
+    })
+    sys.exit(1)
+  
 def hostgroup_add(data):
+  #TODO check if hostgroup already exists
+
   #building command
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HG -a add"
@@ -139,68 +161,84 @@ def hostgroup_add(data):
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
-    return (True, {"added": "successfully added hostgroup"})
+    return (True, {"added": "successfully added hostgroup "+data['hostgroupname']})
   else:
     if cmdout.find("Object already exists") == 0:
       return (False, {"present": cmdout})
     else:
       print json.dumps({
         "failed" : True,
-        "msg"    : "centreon command failed with error: "+cmdout
+        "msg"    : "centreon command ADD failed with error: "+cmdout
       })
       sys.exit(1)
 
 def hostgroup_addmembers(data):
-  basecmd = base_command(data['username'], data['password'])
-  operation = " -o HG -a addmember"
-  #TODO Check w/ "-a getmember" each host individually before doing anything
-  varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
-
-  (cmdout, rc) = run_command(basecmd+operation+varg)
-
-  if rc == 0:
-    return (True, {"added": "successfully added to hostgroup"})
-  else:
-    print json.dumps({
-      "failed" : True,
-      "msg"    : "centreon command failed with error: "+cmdout
-    })
-    sys.exit(1)
+  #check if each member is a member of the hostgroup
+  addmembers = []
+  for host in data['members'].split("|"):
+    if hostgroup_has_host(data, host):
+      continue
+    
+    basecmd = base_command(data['username'], data['password'])
+    operation = " -o HG -a addmember"
+    varg = ' -v "'+data['hostgroupname']+';'+host+'"'
+    (cmdout, rc) = run_command(basecmd+operation+varg)
+    if rc == 0:
+      addmembers += host
+    else:
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command ADDMEMBER failed with error: "+cmdout
+      })
+      sys.exit(1)
+      
+  if addmembers == []:
+    return (False, {"addmember": data['members']+" was/were already in hostgroup "+data['hostgroupname']})
+  return (True, {"added": "successfully added "+data['members'] + " to hostgroup "+data['hostgroupname']})
 
 def hostgroup_delete(data):
+  #TODO check if hostgroup exists
+
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HG -a del"
   varg = ' -v "'+data['hostgroupname']+'"'
   (cmdout, rc) = run_command(basecmd+operation+varg)
 
   if rc == 0:
-    return (True, {"deleted": "successfully deleted hostgroup"})
+    return (True, {"deleted": "successfully deleted hostgroup "+data['hostgroupname']})
   else:
     if cmdout.find("Object not found") == 0:
       return (False, {"absent": cmdout})
     else:
       print json.dumps({
         "failed" : True,
-        "msg"    : "centreon command failed with error: "+cmdout
+        "msg"    : "centreon command DEL failed with error: "+cmdout
       })
       sys.exit(1)
 
 def hostgroup_delmembers(data):
-  basecmd = base_command(data['username'], data['password'])
-  operation = " -o HG -a delmember"
-  #TODO Check w/ "-a getmember" each host individually before doing anything
-  varg = ' -v "'+data['hostgroupname']+';'+data['members']+'"'
-
-  (cmdout, rc) = run_command(basecmd+operation+varg)
-
-  if rc == 0:
-    return (True, {"deleted": "successfully deleted from hostgroup"})
-  else:
-    print json.dumps({
-      "failed" : True,
-      "msg"    : "centreon command failed with error: "+cmdout
-    })
-    sys.exit(1)
+  #check if each member is a member of the hostgroup
+  delmembers = []
+  for host in data['members'].split("|"):
+    if not hostgroup_has_host(data, host):
+      continue
+      
+    basecmd = base_command(data['username'], data['password'])
+    operation = " -o HG -a delmember"
+    varg = ' -v "'+data['hostgroupname']+';'+host+'"'
+    (cmdout, rc) = run_command(basecmd+operation+varg)
+    if rc == 0:
+      delmembers += host
+    else:
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command DELMEMBER failed with error: "+cmdout
+      })
+      sys.exit(1)
+      
+  if delmembers == []:
+    return (False, {"delmember": data['members']+" was/were not in hostgroup "+data['hostgroupname']})
+  return (True, {"deleted": "successfully deleted "+data['members'] + " from hostgroup "+data['hostgroupname']})
 
 def main():
   fields = {
@@ -227,7 +265,7 @@ def main():
   module.exit_json(changed=has_changed, meta=result)
 
 from ansible.module_utils.basic import *
-import shlex, subprocess, sys
+import shlex, subprocess, sys, string
 
 if __name__ == '__main__':
     main()
