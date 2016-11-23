@@ -126,6 +126,25 @@ def run_command(fullcmd):
   proc = subprocess.Popen(shlex.split(fullcmd), stdout=subprocess.PIPE)
   return proc.communicate()[0],proc.returncode
 
+def hostgroup_presence(data):
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HG -a show"
+
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation)
+
+  if rc == 0:
+    for line in cmdout.split('\n'):
+      if line and line.split(";")[1] == data['hostgroupname']:
+        return True
+    return False
+  else:
+    print json.dumps({
+      "failed" : True,
+      "msg"    : "centreon SHOW command failed with error: "+cmdout
+    })
+    sys.exit(1)
+  
 def hostgroup_has_host(data, host):
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HG -a getmember"
@@ -147,7 +166,9 @@ def hostgroup_has_host(data, host):
     sys.exit(1)
   
 def hostgroup_add(data):
-  #TODO check if hostgroup already exists
+  #check if hostgroup is already present
+  if hostgroup_presence(data):
+    return (False, {"add": "hostgroup "+data['hostgroupname'] + " already exists"})
 
   #building command
   basecmd = base_command(data['username'], data['password'])
@@ -197,7 +218,9 @@ def hostgroup_addmembers(data):
   return (True, {"added": "successfully added "+data['members'] + " to hostgroup "+data['hostgroupname']})
 
 def hostgroup_delete(data):
-  #TODO check if hostgroup exists
+  #check if hostgroup is already absent
+  if not hostgroup_presence(data):
+    return (False, {"delete": "hostgroup "+data['hostgroupname'] + " already absent"})
 
   basecmd = base_command(data['username'], data['password'])
   operation = " -o HG -a del"
