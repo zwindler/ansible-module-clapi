@@ -6,7 +6,7 @@
         password: "{{ centreon_clapi_password }}"
         hostname: "{{ inventory_hostname }}"
         ipaddress: "{{ ansible_default_ipv4.address }}"
-        groupname: Ping_LAN
+        groupname: OS_Linux
         action: add
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
@@ -37,22 +37,52 @@
         password: "{{ centreon_clapi_password }}"
         hostname: "{{ inventory_hostname }}"
         ipaddress: "{{ ansible_default_ipv4.address }}"
-        groupname: Ping_LAN
+        groupname: OS_Linux
         action: add
       delegate_to: "{{centreon_server}}"
       notify: "notify poller after modification"
 
-    - name: add host to Server_Linux_NRPE hostgroup
+    - name: add host to OS_Linux hostgroup
       clapi_hostgroup:
         username: '{{ centreon_clapi_username }}'
         password: '{{ centreon_clapi_password }}'
-        hostgroupname: Server_Linux_NRPE
+        hostgroupname: testgroup
         members: '{{ inventory_hostname }}'
         action: addmembers
       delegate_to: '{{ centreon_server }}'
       notify: "notify poller after modification"
 
+    - name: add host to OS_Linux hostgroup another time
+      clapi_hostgroup:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostgroupname: testgroup
+        members: '{{ inventory_hostname }}'
+        action: addmembers
+      delegate_to: '{{ centreon_server }}'
+      notify: "notify poller after modification"
+
+    - name: add generic-host template
+      clapi_host:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostname: '{{ inventory_hostname }}'
+        hosttemplate: "generic-host"
+        action: addtemplate
+      delegate_to: '{{ centreon_server }}'
+      notify:
+        - "notify poller after modification"
+        - "apply template services to host"
+
   handlers:
+    - name: apply template services to host
+      clapi_host:
+        username: '{{ centreon_clapi_username }}'
+        password: '{{ centreon_clapi_password }}'
+        hostname: '{{ inventory_hostname }}'
+        action: applytpl
+      delegate_to: '{{ centreon_server }}'
+
     - name: notify poller after modification
       clapi_poller:
         username: '{{ centreon_clapi_username }}'
