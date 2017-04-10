@@ -66,6 +66,16 @@ options:
     description:
       - Optional group for added host
     required: false
+    
+  variable:
+    description:
+      - Optional variable name used for action setparam
+    required: false
+    
+  variable_value:
+    description:
+      - Optional variable_value used for action setparam
+    required: false
 
   pollername:
     description:
@@ -100,7 +110,19 @@ EXAMPLES = '''
     action: add
   delegate_to: ces
   notify: "notify poller after modification"
-
+  
+# Modify host "newserver" to set param retry_check_interval equal to 5
+- name: set param to a host <w clapi_host
+  clapi_host:
+    username: clapi
+    password: clapi
+    hostname: newserver
+    action: setparam
+    variable: retry_check_interval
+    variable_value: 5
+  delegate_to: ces
+  notify: "notify poller after modification"
+  
 # remove hostname "newserver" from Centreon configuration
 - name: remove host w/ clapi_host
   clapi_host:
@@ -230,6 +252,32 @@ def host_add(data):
       })
       sys.exit(1)
 
+def host_setparam(data):
+  #check if host is already present
+  if host_presence(data) == False:
+    return (False, {"setparam": "host "+data['hostname'] + " doesn't exists"})
+  
+  #building command
+  basecmd = base_command(data['username'], data['password'])
+  operation = " -o HOST -a setparam "
+  varg = '-v "'+data['hostname']+';'+data['variable']+';'+data['value']+';'
+  varg += '"'
+
+  #running full command
+  (cmdout, rc) = run_command(basecmd+operation+varg)
+
+  if rc == 0:
+    return (True, {"setparam": data['variable']+"successfully added to "+data['hostname']})
+  else:
+    if cmdout.find("Object not found") == 0:
+      return (False, {"setparam": cmdout})
+    else:
+      print json.dumps({
+        "failed" : True,
+        "msg"    : "centreon command SETPARAM failed with error: "+cmdout
+      })
+      sys.exit(1)
+      
 def host_addtemplate(data):
   #check if host template is already present
   if host_template_presence(data):
@@ -321,9 +369,10 @@ def main():
     "hosttemplate": {"default": "generic-host", "type": "str"},
     "pollername": {"default": "Central", "type": "str"},
     "groupname": {"type": "str"},
+    "variable": {"type": "str"},
     "action": {
       "default": "add",
-      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl'],
+      "choices": ['add', 'addtemplate', 'delete', 'deltemplate', 'applytpl', 'setparam'],
       "type": 'str'
     },
   }
@@ -333,6 +382,7 @@ def main():
     "delete": host_delete,
     "deltemplate": host_deltemplate,
     "applytpl": host_applytpl,
+    "setparam": host_setparam,
   }
 
   module = AnsibleModule(argument_spec=fields)
