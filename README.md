@@ -1,3 +1,7 @@
+# In an effort to submit a module to automate Centreon inside officiel Ansible community modules, this repository is now deprecated. The work will continue on https://github.com/guillaumewatteeux/ansible-centreon
+
+###########################################
+
 # ansible_module_clapi v0.1
 
 This repository contains a few Python files that can be used by Ansible as modules to automate [Centreon](https://www.centreon.com/fr/) interactions.
